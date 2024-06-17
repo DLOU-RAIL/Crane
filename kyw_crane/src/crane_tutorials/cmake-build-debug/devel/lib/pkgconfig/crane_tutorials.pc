@@ -1,0 +1,8 @@
+prefix=/home/lys/catkin_ws/src/crawler_crane/crane_tutorials/cmake-build-debug/devel
+
+Name: crane_tutorials
+Description: Description of crane_tutorials
+Version: 0.0.0
+Cflags: 
+Libs: -L/home/lys/catkin_ws/src/crawler_crane/crane_tutorials/cmake-build-debug/devel/lib 
+Requires: roscpp gazebo_ros

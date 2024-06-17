@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/lys/catkin_ws/src/crawler_crane/crane_tutorials/cmake-build-debug/devel/setup.sh

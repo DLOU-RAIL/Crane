@@ -1,0 +1,8 @@
+<launch>
+
+  <include file="$(find crawler_crane_moveit_config)/launch/demo.launch"/>
+
+  <node name="move_group_c_interface" pkg="crane_tutorials" type="move_group_c_interface" respawn="false" output="screen">
+  </node>
+
+</launch>

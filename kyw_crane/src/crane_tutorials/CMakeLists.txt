@@ -1,0 +1,275 @@
+cmake_minimum_required(VERSION 2.8.3)
+project(crane_tutorials)
+
+## Compile as C++11, supported in ROS Kinetic and newer
+add_compile_options(-std=c++11)
+
+## Find catkin macros and libraries
+## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
+## is used, also find other catkin packages
+find_package(catkin REQUIRED COMPONENTS
+  cmake_modules
+  interactive_markers
+  moveit_core
+  moveit_ros_perception
+  moveit_ros_planning_interface
+  pluginlib
+  moveit_visual_tools
+  crane_moveit_plugins
+  gazebo_ros
+)
+
+set(Torch_DIR /home/robot/libtorch/share/cmake/Torch)
+find_package(Torch REQUIRED)
+
+
+# Depend on system install of Gazebo
+find_package(gazebo REQUIRED)
+# Gazebo cxx flags should have all the required C++ flags
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GAZEBO_CXX_FLAGS}")
+
+## System dependencies are found with CMake's conventions
+
+# find_package(Boost REQUIRED COMPONENTS system)
+
+
+## Uncomment this if the package has a setup.py. This macro ensures
+## modules and global scripts declared therein get installed
+## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
+# catkin_python_setup()
+
+################################################
+## Declare ROS messages, services and actions ##
+################################################
+
+## To declare and build messages, services or actions from within this
+## package, follow these steps:
+## * Let MSG_DEP_SET be the set of packages whose message types you use in
+##   your messages/services/actions (e.g. std_msgs, actionlib_msgs, ...).
+## * In the file package.xml:
+##   * add a build_depend tag for "message_generation"
+##   * add a build_depend and a run_depend tag for each package in MSG_DEP_SET
+##   * If MSG_DEP_SET isn't empty the following dependency has been pulled in
+##     but can be declared for certainty nonetheless:
+##     * add a run_depend tag for "message_runtime"
+## * In this file (CMakeLists.txt):
+##   * add "message_generation" and every package in MSG_DEP_SET to
+##     find_package(catkin REQUIRED COMPONENTS ...)
+##   * add "message_runtime" and every package in MSG_DEP_SET to
+##     catkin_package(CATKIN_DEPENDS ...)
+##   * uncomment the add_*_files sections below as needed
+##     and list every .msg/.srv/.action file to be processed
+##   * uncomment the generate_messages entry below
+##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
+
+## Generate messages in the 'msg' folder
+# add_message_files(
+#   FILES
+#   Message1.msg
+#   Message2.msg
+# )
+
+## Generate services in the 'srv' folder
+# add_service_files(
+#   FILES
+#   Service1.srv
+#   Service2.srv
+# )
+
+## Generate actions in the 'action' folder
+# add_action_files(
+#   FILES
+#   Action1.action
+#   Action2.action
+# )
+
+## Generate added messages and services with any dependencies listed here
+# generate_messages(
+#   DEPENDENCIES
+#   std_msgs  # Or other packages containing msgs
+# )
+
+################################################
+## Declare ROS dynamic reconfigure parameters ##
+################################################
+
+## To declare and build dynamic reconfigure parameters within this
+## package, follow these steps:
+## * In the file package.xml:
+##   * add a build_depend and a run_depend tag for "dynamic_reconfigure"
+## * In this file (CMakeLists.txt):
+##   * add "dynamic_reconfigure" to
+##     find_package(catkin REQUIRED COMPONENTS ...)
+##   * uncomment the "generate_dynamic_reconfigure_options" section below
+##     and list every .cfg file to be processed
+
+## Generate dynamic reconfigure parameters in the 'cfg' folder
+# generate_dynamic_reconfigure_options(
+#   cfg/DynReconf1.cfg
+#   cfg/DynReconf2.cfg
+# )
+
+###################################
+## catkin specific configuration ##
+###################################
+## The catkin_package macro generates cmake config files for your package
+## Declare things to be passed to dependent projects
+## INCLUDE_DIRS: uncomment this if your package contains header files
+## LIBRARIES: libraries you create in this project that dependent projects also need
+## CATKIN_DEPENDS: catkin_packages dependent projects also need
+## DEPENDS: system dependencies of this project that dependent projects also need
+catkin_package(
+#  INCLUDE_DIRS include
+#  LIBRARIES crane_tutorials
+#  CATKIN_DEPENDS cmake_modules interactive_markers moveit_core moveit_ros_perception moveit_ros_planning_interface pluginlib
+#  DEPENDS system_lib
+  DEPENDS
+    roscpp
+    gazebo_ros
+)
+
+###########
+## Build ##
+###########
+
+## Specify additional locations of header files
+## Your package locations should be listed before other locations
+include_directories(
+# include
+  ${catkin_INCLUDE_DIRS}
+)
+
+## Declare a C++ library
+# add_library(${PROJECT_NAME}
+#   src/${PROJECT_NAME}/crane_tutorials.cpp
+# )
+
+## Add cmake target dependencies of the library
+## as an example, code may need to be generated before libraries
+## either from message generation or dynamic reconfigure
+# add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+## Declare a C++ executable
+## With catkin_make all packages are built within a single CMake context
+## The recommended prefix ensures that target names across packages don't collide
+# add_executable(${PROJECT_NAME}_node src/crane_tutorials_node.cpp)
+
+## Rename C++ executable without prefix
+## The above recommended prefix causes long target names, the following renames the
+## target back to the shorter version for ease of user use
+## e.g. "rosrun someones_pkg node" instead of "rosrun someones_pkg someones_pkg_node"
+# set_target_properties(${PROJECT_NAME}_node PROPERTIES OUTPUT_NAME node PREFIX "")
+
+## Add cmake target dependencies of the executable
+## same as for the library above
+# add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+## Specify libraries to link a library or executable target against
+# target_link_libraries(${PROJECT_NAME}_node
+#   ${catkin_LIBRARIES}
+# )
+
+SET(MSL_SRCS 
+    src/msl/vector.cpp 
+    src/msl/util.cpp 
+    src/msl/tree.cpp 
+    src/msl/random.cpp 
+    src/msl/problem.cpp
+    src/msl/prm.cpp 
+    src/msl/planner.cpp 
+    src/msl/MTRand.cpp 
+    src/msl/msllist.cpp 
+    src/msl/graph.cpp 
+    src/msl/solver.cpp
+    src/msl/rrt.cpp
+    src/msl/RRTConnectPlusPlus.cpp
+    src/msl/BiMRRTs.cpp)
+
+#SET(CUSTOMLIBS
+#   /home/hill/gym-gazebo/gym_gazebo/envs/installation/catkin_ws/devel/lib/#libmoveit_ompl_interface.so 
+#   /home/hill/gym-gazebo/gym_gazebo/envs/installation/catkin_ws/devel/lib/libompl_visual_tools.so
+# )
+
+add_executable(move_group_c_interface src/move_group_c_interface.cpp)
+target_link_libraries(move_group_c_interface ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+
+add_executable(decompose_planning src/decompose_planning.cpp ${MSL_SRCS})
+target_link_libraries(decompose_planning ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${TORCH_LIBRARIES})
+set_property(TARGET decompose_planning PROPERTY CXX_STANDARD 11)
+
+add_executable(motion_planning_for_crane src/motion_planning_for_crane.cpp)
+target_link_libraries(motion_planning_for_crane ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+
+add_executable(move_group_for_crane src/move_group_for_crane.cpp)
+target_link_libraries(move_group_for_crane ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+
+add_executable(show_line src/showline.cpp)
+target_link_libraries(show_line ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+
+add_executable(visualize_clr src/visualize_CLR.cpp)
+target_link_libraries(visualize_clr ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+
+add_executable(crane_planning_data_generator src/crane_planning_data_generator.cpp)
+target_link_libraries(crane_planning_data_generator ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${TORCH_LIBRARIES})
+set_property(TARGET crane_planning_data_generator PROPERTY CXX_STANDARD 11)
+
+#add_executable(testCBiMRRT src/testCBiMRRT.cpp)
+#target_link_libraries(testCBiMRRT ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${OMPL_LIBRARIES} ${CUSTOMLIBS})
+
+
+link_directories(${GAZEBO_LIBRARY_DIRS})
+include_directories(${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS} ${GAZEBO_INCLUDE_DIRS} include)
+
+#add_library(some_visual_plugin src/some_visual_plugin.cpp)
+#target_link_libraries(some_visual_plugin ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${GAZEBO_LIBRARIES})
+
+add_executable(testoctomap src/testoctomap.cpp)
+target_link_libraries(testoctomap ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+
+#############
+## Install ##
+#############
+
+# all install targets should use catkin DESTINATION variables
+# See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
+
+## Mark executable scripts (Python etc.) for installation
+## in contrast to setup.py, you can choose the destination
+# install(PROGRAMS
+#   scripts/my_python_script
+#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+# )
+
+## Mark executables and/or libraries for installation
+# install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_node
+#   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+# )
+
+## Mark cpp header files for installation
+# install(DIRECTORY include/${PROJECT_NAME}/
+#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+#   FILES_MATCHING PATTERN "*.h"
+#   PATTERN ".svn" EXCLUDE
+# )
+
+## Mark other files for installation (e.g. launch and bag files, etc.)
+# install(FILES
+#   # myfile1
+#   # myfile2
+#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+# )
+
+#############
+## Testing ##
+#############
+
+## Add gtest based cpp test target and link libraries
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_crane_tutorials.cpp)
+# if(TARGET ${PROJECT_NAME}-test)
+#   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
+# endif()
+
+## Add folders to be run by python nosetests
+# catkin_add_nosetests(test)

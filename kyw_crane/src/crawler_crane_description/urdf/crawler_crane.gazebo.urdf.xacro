@@ -1,0 +1,83 @@
+<?xml version="1.0"?>
+<robot name="crawler_crane" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:include filename="$(find velodyne_description)/urdf/HDL-32E.urdf.xacro"/>
+
+  <!-- transmision of joints -->  
+  <xacro:macro name="transmission_block" params="joint_name">  
+    <transmission name="tran1">  
+      <type>transmission_interface/SimpleTransmission</type>  
+      <joint name="${joint_name}">  
+        <hardwareInterface>PositionJointInterface</hardwareInterface>  
+        <hardwareInterface>VelocityJointInterface</hardwareInterface>  
+        <hardwareInterface>EffortJointInterface</hardwareInterface>  
+      </joint>  
+      <actuator name="motor1">  
+        <hardwareInterface>VelocityJointInterface</hardwareInterface>  
+        <mechanicalReduction>1</mechanicalReduction>  
+      </actuator>  
+    </transmission>  
+  </xacro:macro> 
+
+  <xacro:macro name="upper_transmission">  
+    <xacro:transmission_block joint_name="superStructure_joint"/>  
+    <xacro:transmission_block joint_name="boom_joint"/>  
+    <xacro:transmission_block joint_name="rope_joint"/> 
+    <xacro:transmission_block joint_name="hook_block_joint"/> 
+    <xacro:transmission_block joint_name="hook_joint"/> 
+  </xacro:macro> 
+
+
+  <!-- controllers plugins -->
+  <xacro:macro name="crane_control_plugins">  
+    <gazebo>  
+        <!-- Differential drive controller  -->
+        <plugin name="differential_drive_controller" filename="libgazebo_ros_diff_drive.so">
+            <rosDebugLevel>Debug</rosDebugLevel>
+            <publishWheelTF>true</publishWheelTF>
+            <robotNamespace>/</robotNamespace>
+            <publishTf>1</publishTf>
+            <publishWheelJointState>true</publishWheelJointState>
+            <alwaysOn>true</alwaysOn>
+            <legacyMode>true</legacyMode>
+            <updateRate>100.0</updateRate>
+            <leftJoint>chassis_to_wheel_left_joint</leftJoint>
+            <rightJoint>chassis_to_wheel_right_joint</rightJoint>
+            <wheelSeparation>${(0.5*chassisW+crawlerW)}</wheelSeparation>
+            <wheelDiameter>${crawlerH}</wheelDiameter>
+            <broadcastTF>1</broadcastTF>
+            <wheelTorque>30000000000000000000000000000000000000000</wheelTorque>
+            <wheelAcceleration>1.8</wheelAcceleration>
+            <commandTopic>cmd_vel</commandTopic>
+            <odometryFrame>odom</odometryFrame> 
+            <odometryTopic>odom</odometryTopic> 
+            <publishOdomTF>1</publishOdomTF>
+            <odometrySource>1</odometrySource>
+            <robotBaseFrame>base_footprint</robotBaseFrame>
+        </plugin>
+
+        <!-- ros_control plugin -->  
+        <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">  
+            <robotNamespace>/</robotNamespace>  
+        </plugin>  
+
+        <!-- gazebo_mimic_joint plugin -->  
+        <plugin name="gazebo_mimic_joint" filename="libroboticsgroup_gazebo_mimic_joint_plugin.so">  
+            <rosDebugLevel>Debug</rosDebugLevel>
+            <robotNamespace>/</robotNamespace>
+            <joint>boom_joint</joint>
+            <mimicJoint>rope_joint</mimicJoint>
+            <multiplier>-1</multiplier>
+            <maxEffort>${effort}</maxEffort>
+        </plugin>  
+    </gazebo> 
+  </xacro:macro> 
+
+  <!-- velodyne laser -->
+  <xacro:macro name="laser_plugins" params="parent x y z">  
+    <HDL-32E parent="${parent}" name="velodyne2" topic="/velodyne_points2" hz="10" samples="220">
+        <origin xyz="${x} ${y} ${z}" rpy="0 0 0" />
+    </HDL-32E>
+  </xacro:macro> 
+
+</robot>

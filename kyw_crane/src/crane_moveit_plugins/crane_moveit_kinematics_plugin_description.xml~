@@ -1,0 +1,9 @@
+<library path="libcrane_moveit_kinematic">
+  <class name="crane_kinematics/CraneKinematicsPlugin" type="crane_kinematics::CraneKinematicsPlugin" base_class_type="kinematics::KinematicsBase">
+    <description>
+      A implementation of kinematics for crawler cranes.
+    </description>
+  </class>
+</library>
+
+

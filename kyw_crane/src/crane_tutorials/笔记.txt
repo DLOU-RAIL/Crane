@@ -1,0 +1,191 @@
+1.机器人状态中rviz显示[前提是开启了robot_state_publisher]
+    ros::Publisher joint_pub = node_handle.advertise<sensor_msgs::JointState>("joint_states", 1);
+    moveit_msgs::RobotState rs_msg;
+    robot_state::robotStateToRobotStateMsg(robot_state, rs_msg);
+    joint_pub.publish(rs_msg.joint_state);
+
+2.机械臂求逆解
+    robot_state.setFromIK(joint_model_group, pose);
+    robot_state.copyJointGroupPositions (const std::string &joint_group_name, double *gstate) const
+
+3.moveit运动规划的方式
+  1）moveit_rviz插件,GUI交互式;
+  2）move_group类接口;
+  3）planning_interface::PlanningContext的Action接口，ROS通信接口;[效率可能没有类接口高]
+
+4.moveit的碰撞检测，特别是与环境的碰撞检测
+  planning_scene_monitor::PlanningSceneMonitorPtr monitor_ptr_udef =  boost::make_shared<planning_scene_monitor::PlanningSceneMonitor>("robot_description");  
+    monitor_ptr_udef->requestPlanningSceneState("get_planning_scene");  
+    planning_scene_monitor::LockedPlanningSceneRW ps(monitor_ptr_udef);  
+    ps->getCurrentStateNonConst().update();  
+    planning_scene::PlanningScenePtr scene = ps->diff();  
+    scene->decoupleParent();  
+
+    scene->setCurrentState(robot_state);
+    robot_state::RobotState& current_state = scene->getCurrentStateNonConst();
+    scene->isStateValid(current_state, ...);
+    或
+    scene->isStateColliding(robot_state, ...);
+
+5.rs_ = whole_group_->getCurrentState();这是一个耗时的操作，慎用！！！！
+
+
+ompl修改之处：
+1）修改：ProblemDefinition.h， GoalLazySamples.h， GoalLazySamples.cpp
+2）增加：CBiMRRT.h， CBiMRRT.cpp
+
+
+**起重机器人运动学和逆向运动学的特点：
+1）起升绳,mimic joint;
+2）末端位姿只有四个自由度而不是6个，所以不能直接用机械臂逆解方法，得单独设计。
+
+-想法
+base：用prm
+upper：用rrt，CLR采样，在PRM地图上看是否能形成通路，若不行继续采样。
+
+3.3 任务：完善prmbased，修改BiMRRTs
+
+P->FilePath
+P->InitialState
+P->GoalState
+P->LowerState
+P->UpperState
+P->Metric((*vi)->State(),x)
+P->InterpolateState(x1,x2,a);
+P->Satisfied(x)
+P->Integrate(P->InitialState, P->GetInputs(P->InitialState).front(),PlannerDeltaT)
+
+
+void 	interpolate (const RobotState &to, const double t, RobotState &dest) const
+void 	interpolate (const JointStateGroup *to, const double t, JointStateGroup *dest) const
+std::vector
+< moveit_msgs::JointLimits > 	getVariableDefaultLimits () const
+std::vector
+< moveit_msgs::JointLimits > 	getVariableLimits () const
+
+
+8000个点：37s
+
+
+
+planning_interface::PlanningContext
+class ModelBasedPlanningContext : public planning_interface::PlanningContext
+{
+og::SimpleSetupPtr& getOMPLSimpleSetup(){};
+}
+
+og::SimpleSetup
+{
+const base::PlannerPtr & 	getPlanner () const
+void 	getPlannerData (base::PlannerData &pd) const 	//Get information about the exploration data structure the motion planner used. 
+}
+
+ompl_visual_tools::
+bool MoveItVizWindow::publishTrajectoryPath(const ompl::base::PlannerDataPtr& path, robot_model::JointModelGroup* jmg,
+                                            const std::vector<const robot_model::LinkModel*>& tips,
+                                            bool show_trajectory_animated)
+
+
+
+void ompl_interface::ModelBasedPlanningContext::convertPath(const ompl::geometric::PathGeometric& pg,
+                                                            robot_trajectory::RobotTrajectory& traj) const
+{
+  robot_state::RobotState ks = complete_initial_robot_state_;
+  for (std::size_t i = 0; i < pg.getStateCount(); ++i)
+  {
+    spec_.state_space_->copyToRobotState(ks, pg.getState(i));
+    traj.addSuffixWayPoint(ks, 0.0);
+  }
+}
+
+bool ompl_interface::ModelBasedPlanningContext::getSolutionPath(robot_trajectory::RobotTrajectory& traj) const
+{
+  traj.clear();
+  if (!ompl_simple_setup_->haveSolutionPath())
+    return false;
+  convertPath(ompl_simple_setup_->getSolutionPath(), traj);
+  return true;
+}
+
+bool ompl_interface::ModelBasedPlanningContext::solve(planning_interface::MotionPlanResponse& res)
+{
+  if (solve(request_.allowed_planning_time, request_.num_planning_attempts))
+  {
+    double ptime = getLastPlanTime();
+    if (simplify_solutions_ && ptime < request_.allowed_planning_time)
+    {
+      simplifySolution(request_.allowed_planning_time - ptime);
+      ptime += getLastSimplifyTime();
+    }
+    interpolateSolution();
+
+    // fill the response
+    logDebug("%s: Returning successful solution with %lu states", getName().c_str(),
+             getOMPLSimpleSetup()->getSolutionPath().getStateCount());
+
+    res.trajectory_.reset(new robot_trajectory::RobotTrajectory(getRobotModel(), getGroupName()));
+    getSolutionPath(*res.trajectory_);
+    res.planning_time_ = ptime;
+    return true;
+  }
+  else
+  {
+    logInform("Unable to solve the planning problem");
+    res.error_code_.val = moveit_msgs::MoveItErrorCodes::PLANNING_FAILED;
+    return false;
+  }
+}
+
+起重机运动规划要做的工作：
+1）基于深度学习选择优良起吊/就位位形
+    a）障碍物环境的表示(se)，用三维数组表示，据此构建碰撞模型加入planningscene，并rviz里可视化出来;  ——辛嘉伟
+    b）固定场景下的优良起吊位形生成（就位CLR限制在一个小方格里）
+       与优良起吊位形有关的影响因素：i）起吊CLR(不变的);ii）就位CLR（不变的）;iii）障碍物地图（不变的）;iv）起吊时刻下车位姿
+    c）站位栅格表示，拟用二维数组表示，给定CLR生成站位栅格，设计一个最优化运动规划算法，用来生成样本标签;     ——郭翰文
+    d）设计神经网络，确定其输入和输出。
+    e）训练数据生成
+    --障碍物场景模型建立：3D建模软件建;程序自动建，要能保存。
+    --机器人模型现成的
+    --起吊/就位位置人工选择，用txt文件保存起吊/就位位置列表
+    --调用BiMRRTs算法生成结果，信息包括：起吊/就位位形，是否成功，规划时间，路径长度
+    ==障碍物场景转化为2D平面图map
+    ==起吊/就位位置转化为2D平面图map
+    ==规划结果表示
+2）在ompl实现BiMRRTs规划算法
+   已实现，但无法可视化规划过程。
+3）在ompl实现prm-based规划算法
+4）在moveit中直接实现BiMRRTs
+  已实现，并能将路径转化成moveit格式路径。
+  未加上Informed优化策略
+5）在moveit中直接实现prm-based算法，加上Informed优化策略
+6）完善分段规划算法  
+7）基于深度强化学习的起重机器人运动规划
+8）运动规划数据可视化，绘制站位环 ——郭翰文
+9）用Bi2RRT*规划下车，再规划两端。
+
+水下机器人：
+1）水下机器人运动控制界面设计 ——廖健贵
+
+张鑫：智能家居
+曹后阳：turtlebot
+廖健贵：
+李俊辰：
+辛嘉伟：固定场景的优良起吊/就位位形获取
+
+
+
+whole_model_group_->getVariableCount():
+得到的是8， x,y,alpha,superstructure_joint, boom_joint, rope_joint, hook_block_joint, hook_joint。前三个对应world_joint。
+whole_model_group_->getActiveJointModelNames():
+world_joint, superstructure_joint, boom_joint, hook_block_joint, hook_joint共5个。
+whole_model_group_->getActiveJointModelsBounds():
+与getActiveJointModelNames对应，共5个。
+
+
+
+2019.9.25
+1）起重机器人逆向运动学里的作业半径范围是[10, 28]；
+2）实际起重性能表里是[8, 48]，目前CLR表示、可视化均按[8, 48]计算。暂时将近[10, 28]，因为规划时按这个值规划，比较耗时。
+
+
+python代码使用rosrun来运行出错，可通过“将.py文件设置为可执行程序运行”。

@@ -1,0 +1,12 @@
+<launch>
+
+  <include file="$(find crawler_crane_moveit_config)/launch/demo.launch" />
+    
+  <rosparam command="load" file="$(find crane_tutorials)/config/init_goal_clrs.yaml"/>
+
+  <!--
+  <node name="decompose_planning" pkg="crane_tutorials" type="decompose_planning" respawn="false" output="screen">
+  </node>
+  -->
+
+</launch>

@@ -1,0 +1,27 @@
+init_clr_list:
+  - lift_obj_pose: 
+      x: 8.0
+      y: 110.0
+      z: 10.0
+      fai: 0.0
+    annular_sectors:
+      - min_R: 10.0
+        max_R: 28.0
+        min_theta: -3.1415926
+        max_theta: 3.1415926
+        min_alpha: -3.1415926
+        max_alpha: 3.1415926
+
+goal_clr_list:
+  - lift_obj_pose: 
+      x: -18.0
+      y: 8.0
+      z: 12.0
+      fai: 0.0
+    annular_sectors:
+      - min_R: 10.0
+        max_R: 28.0
+        min_theta: -3.1415926
+        max_theta: 3.1415926
+        min_alpha: -3.1415926
+        max_alpha: 3.1415926

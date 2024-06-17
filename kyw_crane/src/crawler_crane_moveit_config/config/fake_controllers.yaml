@@ -1,0 +1,17 @@
+controller_list:
+  - name: fake_upper_controller
+    joints:
+      - superStructure_joint
+      - boom_joint
+      - hook_block_joint
+      - hook_joint
+  - name: fake_bottom_controller
+    joints:
+      - world_joint
+  - name: fake_whole_controller
+    joints:
+      - world_joint
+      - superStructure_joint
+      - boom_joint
+      - hook_block_joint
+      - hook_joint

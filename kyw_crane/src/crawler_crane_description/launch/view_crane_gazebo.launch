@@ -1,0 +1,55 @@
+<launch>
+
+  <!-- these are the arguments you can pass this launch file, for example paused:=true -->
+  <arg name="paused" default="true"/>
+  <arg name="use_sim_time" default="true"/>
+  <arg name="gui" default="true"/>
+  <arg name="headless" default="false"/>
+  <arg name="debug" default="false"/>
+
+  <!-- We resume the logic in empty_world.launch -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="debug" value="$(arg debug)" />
+    <arg name="gui" value="$(arg gui)" />
+    <arg name="paused" value="$(arg paused)"/>
+    <arg name="use_sim_time" value="$(arg use_sim_time)"/>
+    <arg name="headless" value="$(arg headless)"/>
+  </include>
+
+  <!-- urdf xml robot description loaded on the Parameter Server-->
+  <param name="robot_description" command="$(find xacro)/xacro.py '$(find crawler_crane_description)/urdf/crawler_crane.urdf.xacro'" /> 
+
+  <!-- Run a python script to the send a service call to gazebo_ros to spawn a URDF robot -->
+  <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+	args="-urdf -model crawler_crane -param robot_description -J boom_joint 1.4 -J hook_block_joint 10"/>   
+
+  <!--<node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+    <param name="use_gui" type="bool" value="true"/>
+  </node>-->
+
+  <!-- Starting robot state publish which will publish tf -->
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"  output="screen" >
+    <param name="publish_frequency" type="double" value="50.0" />
+    <!--<remap from="/joint_states" to="/crawler_crane/joint_states" />-->
+  </node>
+
+  <!-- Load joint controller configurations from YAML file to parameter server -->
+  <rosparam file="$(find crawler_crane_description)/config/controller.yaml" command="load"/>
+  <!-- load the controllers -->
+  <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false"
+	output="screen" args="joint_state_controller
+					  joint1_position_controller
+            joint2_position_controller
+            joint3_position_controller
+            joint4_position_controller
+            joint5_position_controller"/>
+
+
+
+  <!-- Launch visualization in rviz -->
+	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find crawler_crane_description)/config/urdf.rviz" required="true" />
+
+  <!-- Launch visualization in rviz -->
+	<node name="rqt" pkg="rqt_gui" type="rqt_gui" />
+
+</launch>
